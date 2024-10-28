@@ -2,7 +2,7 @@
 'use client'
 
 import { TrendingUp } from "lucide-react"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip ,ResponsiveContainer} from "recharts"
 
 import {
   Card,
@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ChartConfig, ChartContainer } from "./ui/chart"
+
 
 // Your performance data
 const performanceData = [
@@ -20,16 +20,7 @@ const performanceData = [
   { attempt: 'Quiz 2', bestScore: 72, avgScore: 58, percentile: 82 },
   
 ]
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig
+
 
 const PerformanceChart = () => {
   return (
@@ -50,7 +41,7 @@ const PerformanceChart = () => {
       </CardHeader>
       <CardContent>
       
-        <div className="h-[300px] w-full"><ChartContainer config={chartConfig}>
+        <div className="h-[300px] w-full"><ResponsiveContainer >
           
             <AreaChart
               data={performanceData}
@@ -117,7 +108,7 @@ const PerformanceChart = () => {
                 name="Percentile"
               />
             </AreaChart>
-          </ChartContainer>
+          </ResponsiveContainer>
         </div>
         
       </CardContent>
