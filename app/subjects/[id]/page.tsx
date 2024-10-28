@@ -19,14 +19,15 @@ interface Subject {
 }
 
 // Type guard to validate Subject
-const isValidSubject = (value: any): value is Subject => {
+const isValidSubject = (value: unknown): value is Subject => {
+  const subject = value as Subject;
   return (
-    value &&
-    typeof value.id === 'number' &&
-    typeof value.name === 'string' &&
-    typeof value.description === 'string' &&
-    typeof value.created_at === 'string' &&
-    typeof value.updated_at === 'string'
+    subject &&
+    typeof subject.id === 'number' &&
+    typeof subject.name === 'string' &&
+    typeof subject.description === 'string' &&
+    typeof subject.created_at === 'string' &&
+    typeof subject.updated_at === 'string'
   );
 };
 

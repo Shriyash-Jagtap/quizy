@@ -25,19 +25,21 @@ interface Subject {
   category: Category;
 }
 
-const isValidSubject = (value: any): value is Subject => {
+const isValidSubject = (value: unknown): value is Subject => {
+  const subject = value as Subject;
+
   return (
-    value &&
-    typeof value.id === 'number' &&
-    typeof value.name === 'string' &&
-    typeof value.description === 'string' &&
-    typeof value.category_id === 'number' &&
-    typeof value.created_at === 'string' &&
-    typeof value.updated_at === 'string' &&
-    value.category &&
-    typeof value.category.id === 'number' &&
-    typeof value.category.name === 'string' &&
-    typeof value.category.description === 'string'
+    subject &&
+    typeof subject.id === 'number' &&
+    typeof subject.name === 'string' &&
+    typeof subject.description === 'string' &&
+    typeof subject.category_id === 'number' &&
+    typeof subject.created_at === 'string' &&
+    typeof subject.updated_at === 'string' &&
+    subject.category &&
+    typeof subject.category.id === 'number' &&
+    typeof subject.category.name === 'string' &&
+    typeof subject.category.description === 'string'
   );
 };
 
