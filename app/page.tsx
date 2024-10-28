@@ -2,11 +2,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
-import { Menu, Clock, BookOpen, BarChart3, GraduationCap, FileText, Users, TrendingUp } from 'lucide-react'
+import { Menu, Clock, BookOpen, BarChart3, GraduationCap, FileText, Users } from 'lucide-react'
 import PerformanceChart from '@/components/PerformanceChart' // Ensure the path is correct
 
 export default function QuizifyVercelLandingPage() {
