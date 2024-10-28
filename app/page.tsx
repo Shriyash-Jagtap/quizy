@@ -22,23 +22,31 @@ export default function QuizifyVercelLandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center border-b border-gray-800 backdrop-blur-md bg-black/50">
-        <Link className="flex items-center justify-center" href="#">
-          <span className="font-bold text-2xl">Quizify</span>
-        </Link>
-        <nav className="hidden md:flex ml-auto gap-6">
-          <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
-          <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Resources</Link>
-          <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
-        </nav>
-        <div className="hidden md:flex items-center gap-4 ml-6">
-          <Button variant="ghost" className="text-gray-400">Sign In</Button>
-          <Button>Get Started</Button>
-        </div>
-        <Button variant="ghost" size="icon" className="md:hidden ml-auto" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          <Menu className="h-6 w-6" />
-        </Button>
-      </header>
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center justify-between border-b border-gray-800 backdrop-blur-md bg-black/50">
+  <Link className="flex items-center" href="/">
+    <motion.span 
+      className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
+      whileHover={{ scale: 1.05 }}
+    >
+      Quizify
+    </motion.span>
+  </Link>
+
+  {/* Desktop Navigation */}
+  <nav className="hidden md:flex items-center gap-6 ml-auto">
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Resources</Link>
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
+    <Button variant="ghost" className="text-gray-400">Sign In</Button>
+    <Button>Get Started</Button>
+  </nav>
+
+  {/* Mobile Menu Button */}
+  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+    <Menu className="h-6 w-6" />
+  </Button>
+</header>
+
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -101,9 +109,11 @@ export default function QuizifyVercelLandingPage() {
                 <Button size="lg" className="bg-white text-black hover:bg-gray-200">
                   Start Practicing Now
                 </Button>
-                <Button size="lg" variant="outline" className="bg-white text-black hover:bg-gray-200">
-                  View Quizes
-                </Button>
+                <Link href="/subjects">
+                  <Button size="lg" variant="outline" className="bg-white text-black hover:bg-gray-200">
+                    View Quizzes
+                  </Button>
+                </Link>
               </div>
               <div className="pt-8 grid grid-cols-2 md:grid-cols-3 gap-8 text-sm text-gray-400">
                 <div className="flex items-center justify-center gap-2">
@@ -112,7 +122,7 @@ export default function QuizifyVercelLandingPage() {
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <FileText size={20} />
-                  <span>5,000+ Questions</span>
+                  <span>105+ Quizes</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 col-span-2 md:col-span-1">
                   <GraduationCap size={20} />
