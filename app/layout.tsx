@@ -3,7 +3,7 @@ import './globals.css'
 import { ReactNode } from 'react'
 
 export const metadata = {
-  title: 'Quizify',
+  title: 'Quizez',
   description: 'Quiz Practice Platform for IITM BS Students',
 }
 
