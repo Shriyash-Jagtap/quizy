@@ -288,7 +288,7 @@ export default function QuizzesPage() {
                           {subject.name}
                         </h3>
                         <p className="text-gray-400 flex-1">{subject.description}</p>
-                        <Link href={`/quizzes/${subject.id}`} className="block mt-4">
+                        <Link href={`/subjects/${subject.id}`} className="block mt-4">
                           <Button className="w-full bg-blue-600 hover:bg-blue-500 transition-colors">
                             Start Quiz
                           </Button>

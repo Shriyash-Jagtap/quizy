@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; // Use next/navigation instead of next/router
+import { useRouter, useParams } from 'next/navigation'; 
 import { supabase } from '@/lib/supabaseClient';
 import { BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,35 +31,50 @@ const isValidSubject = (value: unknown): value is Subject => {
   );
 };
 
-interface QuizPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function QuizPage({ params }: QuizPageProps) {
+export default function QuizPage() {
   const router = useRouter();
-  const { id } = params;
+  const params = useParams();
+  const id = params?.id;
+
+  console.log("Route Params:", params);
+  console.log("Subject ID:", id);
+
   const [subject, setSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubject = async () => {
-      const { data, error } = await supabase
-        .from<'subjects', Subject>('subjects') // Provide both table name and row type
-        .select('*')
-        .eq('id', Number(id))
-        .single();
-
-      if (error) {
-        setError(error.message);
-      } else if (data && isValidSubject(data)) {
-        setSubject(data);
-      } else {
-        setSubject(null);
+      if (!id) {
+        setError('No subject ID provided.');
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const { data, error } = await supabase
+          .from('subjects')
+          .select('*')
+          .eq('id', Number(id))
+          .single();
+
+        console.log("Fetched Data:", data);
+        console.log("Fetch Error:", error);
+
+        if (error) {
+          setError(error.message);
+        } else if (data && isValidSubject(data)) {
+          setSubject(data);
+        } else {
+          setSubject(null);
+          setError('Invalid subject data received.');
+        }
+      } catch (err) {
+        console.error("Fetch Exception:", err);
+        setError('An unexpected error occurred while fetching the data.');
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchSubject();
@@ -124,10 +139,9 @@ export default function QuizPage({ params }: QuizPageProps) {
                 <p className="text-gray-400 mt-2">{subject.description}</p>
               </div>
 
-              {/* Placeholder for Quiz Content */}
               <div className="flex flex-col items-center">
                 <p className="text-gray-400 mb-4">Quiz functionality is under development.</p>
-                <Button onClick={() => router.push('/quizzes')}>Back to Quizzes</Button>
+                <Button onClick={() => router.push('/subjects')}>Back to Quizzes</Button>
               </div>
             </motion.div>
           </div>
