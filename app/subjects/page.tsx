@@ -124,7 +124,7 @@ export default function QuizzesPage() {
       className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
       whileHover={{ scale: 1.05 }}
     >
-      Quizify
+      Quizy
     </motion.span>
   </Link>
 
@@ -186,11 +186,11 @@ export default function QuizzesPage() {
               <BookOpen className="h-12 w-12 text-blue-400" />
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                  Available Quizzes
+                  Available Subjects
                 </span>
               </h1>
               <p className="text-xl text-gray-400 max-w-2xl">
-                Choose from our collection of quizzes designed to help you master your coursework.
+              Search for subjects where you'd like ACE to excel.
               </p>
               
               <div className="w-full max-w-md mt-8">
@@ -209,7 +209,7 @@ export default function QuizzesPage() {
           </div>
         </section>
 
-        <section className="w-full py-8 bg-gray-950">
+        <section className="w-full py-8 bg-gray-950 min-h-[80vh]">
           <div className="container px-4 md:px-6">
             <div className="flex flex-wrap gap-2 mb-8">
               <motion.button
@@ -302,6 +302,17 @@ export default function QuizzesPage() {
           </div>
         </section>
       </main>
+      {/* Footer */}
+      <footer className="w-full py-8 px-4 md:px-6 border-t border-gray-800">
+        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-gray-400">© 2024 Quizify. All rights reserved.</p>
+          <nav className="flex gap-6">
+            <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Terms</Link>
+            <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Privacy</Link>
+            <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Contact</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
