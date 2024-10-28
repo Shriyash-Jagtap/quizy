@@ -24,7 +24,7 @@ export default function QuizifyVercelLandingPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center border-b border-gray-800 backdrop-blur-md bg-black/50">
         <Link className="flex items-center justify-center" href="#">
-          <span className="font-bold text-2xl">Quizez</span>
+          <span className="font-bold text-2xl">Quizify</span>
         </Link>
         <nav className="hidden md:flex ml-auto gap-6">
           <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
