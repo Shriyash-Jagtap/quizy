@@ -1,7 +1,8 @@
 // app/layout.tsx
+
 import './globals.css'
 import { ReactNode } from 'react'
-
+import { AuthProvider } from '@/context/AuthContext';
 export const metadata = {
   title: 'Quizez',
   description: 'Quiz Practice Platform for IITM BS Students',
@@ -10,7 +11,11 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
-  )
+  );
 }

@@ -189,7 +189,7 @@ export default function SubjectPage() {
                           </div>
                           <div className="flex items-center">
                             <Clock className="h-4 w-4 mr-1" />
-                            <span>{quiz.quiz_category.toLowerCase() === 'end term' ? '90 mins' : '60 mins'}</span>
+                            <span>{quiz.quiz_category.toLowerCase() === "end term" ? "90 mins" : "60 mins"}</span>
                           </div>
                         </div>
                         <Link href={`/quizzes/${quiz.id}`} className="block mt-4">

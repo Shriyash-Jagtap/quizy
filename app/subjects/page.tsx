@@ -190,7 +190,7 @@ export default function QuizzesPage() {
                 </span>
               </h1>
               <p className="text-xl text-gray-400 max-w-2xl">
-              Search for subjects where you'd like ACE to excel.
+              Search for subjects where you&#39;d like ACE to excel.
               </p>
               
               <div className="w-full max-w-md mt-8">
