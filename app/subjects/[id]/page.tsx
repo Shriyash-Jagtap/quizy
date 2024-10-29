@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from "@/components/ui/button";
-import { BookOpen, ArrowLeft, Clock, Activity, Award } from 'lucide-react';
+import { BookOpen,Menu, ArrowLeft, Clock, Activity, Award } from 'lucide-react';
 
 interface Quiz {
   id: number;
@@ -24,6 +24,7 @@ export default function SubjectPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -62,6 +63,50 @@ export default function SubjectPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center justify-between border-b border-gray-800 backdrop-blur-md bg-black/50">
+  <Link className="flex items-center" href="/">
+    <motion.span 
+      className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
+      whileHover={{ scale: 1.05 }}
+    >
+      Quizy
+    </motion.span>
+  </Link>
+
+  {/* Desktop Navigation */}
+  <nav className="hidden md:flex items-center gap-6 ml-auto">
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Resources</Link>
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
+    <Button variant="ghost" className="text-gray-400">Sign In</Button>
+    <Button>Get Started</Button>
+  </nav>
+
+  {/* Mobile Menu Button */}
+  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+    <Menu className="h-6 w-6" />
+  </Button>
+</header>
+{/* Mobile Menu */}
+<AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            className="fixed inset-0 z-40 bg-black pt-16"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <nav className="flex flex-col items-center gap-4 p-4">
+              <Link className="text-lg font-medium hover:text-gray-300 transition-colors" href="#">Features</Link>
+              <Link className="text-lg font-medium hover:text-gray-300 transition-colors" href="#">Resources</Link>
+              <Link className="text-lg font-medium hover:text-gray-300 transition-colors" href="#">Pricing</Link>
+              <Button variant="ghost" className="text-gray-400">Sign In</Button>
+              <Button className="w-full mt-4">Get Started</Button>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <main className="flex-1 pt-16">
         <section className="w-full py-16 md:py-24 relative overflow-hidden">
           <motion.div 
