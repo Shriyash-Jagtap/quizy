@@ -353,7 +353,7 @@ export default function QuizPage() {
 
       {/* Main Content */}
       <div className="flex-1 pt-16 flex">
-      <Confetti showConfetti={showConfetti}/>
+      {/* <Confetti showConfetti={showConfetti}/> */}
         {/* Sidebar */}
         <div className="w-[30vw] border-r border-gray-800/50 bg-gray-950/80 backdrop-blur-sm p-6 flex flex-col fixed h-[92vh] top-16 overflow-y-auto">
           <Link
@@ -491,6 +491,7 @@ export default function QuizPage() {
         </motion.div>
 
           {/* Display Total Marks */}
+          
           <AnimatePresence>
           {totalMarks !== null && (
             <motion.div
@@ -512,6 +513,7 @@ export default function QuizPage() {
 
         {/* Questions Section - Scrollable */}
         <div className="flex-1 ml-[30vw] overflow-y-auto pb-8 h-full">
+        <Confetti showConfetti={showConfetti}/>
         <div className="p-8">
           {questions.map((question, index) => (
             <motion.div
