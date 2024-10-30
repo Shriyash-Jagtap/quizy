@@ -19,6 +19,7 @@ import {
   AlertCircle,
   ChevronLeft,
   Menu,
+  CheckCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import MarkdownRenderer from '@/components/MarkdownRenderer'; 
@@ -65,7 +66,8 @@ interface QuestionFeedback {
 
 export default function QuizPage() {
   const { id } = useParams();
- 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,11 +291,22 @@ export default function QuizPage() {
         <div className="text-gray-400">Quiz not found.</div>
       </div>
     );
+ 
 
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    // Simulate loading for better UX
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    calculateMarks();
+    setShowConfetti(true);
+    setIsSubmitting(false);
+    // Hide confetti after 3 seconds
+    setTimeout(() => setShowConfetti(false), 3000);
+  };
   return (
     <div className="flex flex-col min-h-screen bg-black text-white overflow-hidden">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center justify-between border-b border-gray-800 bg-black">
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center justify-between border-b border-gray-800 bg-black/90 backdrop-blur-sm after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-gradient-to-r after:from-transparent after:via-blue-500/50 after:to-transparent">
         <Link href="/" className="flex items-center">
           <motion.span
             className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
@@ -302,7 +315,6 @@ export default function QuizPage() {
             Quizy
           </motion.span>
         </Link>
-        {/* Mobile Menu Button */}
         <Button
           variant="ghost"
           size="icon"
@@ -340,8 +352,37 @@ export default function QuizPage() {
 
       {/* Main Content */}
       <div className="flex-1 pt-16 flex">
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50">
+          {[...Array(50)].map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ 
+                y: -20,
+                x: Math.random() * window.innerWidth,
+                rotate: 0,
+                opacity: 1
+              }}
+              animate={{
+                y: window.innerHeight + 20,
+                rotate: 360,
+                opacity: 0
+              }}
+              transition={{
+                duration: 2,
+                delay: Math.random() * 0.5,
+                ease: "linear"
+              }}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                background: `hsl(${Math.random() * 360}, 70%, 50%)`
+              }}
+            />
+          ))}
+        </div>
+      )}
         {/* Sidebar */}
-        <div className="w-[30vw] border-r border-gray-800 bg-gray-950 p-6 flex flex-col fixed h-[92vh] top-16 overflow-y-auto">
+        <div className="w-[30vw] border-r border-gray-800/50 bg-gray-950/80 backdrop-blur-sm p-6 flex flex-col fixed h-[92vh] top-16 overflow-y-auto">
           <Link
             href="/subjects"
             className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-8"
@@ -423,38 +464,91 @@ export default function QuizPage() {
           </div>
 
           {/* Submit Button */}
+          <motion.div
+          className="mt-auto"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
           <Button
-            className="mt-auto bg-blue-600 hover:bg-blue-500"
-            size="lg"
-            onClick={() => {
-              calculateMarks();
-              console.log('Submitted Answers:', answers);
-              console.log('Total Marks:', totalMarks);
-            }}
+            className={`w-full h-12 relative overflow-hidden ${
+              isSubmitting ? 'bg-blue-600/50' : 'bg-blue-600'
+            } hover:bg-blue-500 transition-colors`}
+            disabled={isSubmitting || totalMarks !== null}
+            onClick={handleSubmit}
           >
-            Submit Exam
+            <AnimatePresence mode="wait">
+              {isSubmitting ? (
+                <motion.div
+                  key="submitting"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Clock className="w-5 h-5" />
+                  </motion.div>
+                </motion.div>
+              ) : totalMarks !== null ? (
+                <motion.div
+                  key="submitted"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="flex items-center space-x-2"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Submitted</span>
+                </motion.div>
+              ) : (
+                <motion.span
+                  key="submit"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  Submit Exam
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Button>
+        </motion.div>
 
           {/* Display Total Marks */}
+          <AnimatePresence>
           {totalMarks !== null && (
-            <div className="mt-4 text-xl font-bold text-center">
-              Your Total Marks: {totalMarks}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="mt-4 p-4 rounded-lg bg-green-500/20 border border-green-500/30"
+            >
+              <div className="text-center">
+                <div className="text-sm text-green-400 mb-1">Total Score</div>
+                <div className="text-2xl font-bold text-green-300">
+                  {totalMarks}
+                </div>
+              </div>
+            </motion.div>
           )}
+        </AnimatePresence>
         </div>
 
         {/* Questions Section - Scrollable */}
         <div className="flex-1 ml-[30vw] overflow-y-auto pb-8 h-full">
-          <div className="p-8">
-            {questions.map((question, index) => (
-              <motion.div
-                key={question.id}
-                id={`question-${question.id}`}
-                className="mb-12 bg-gray-900/50 border border-gray-800 rounded-xl p-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
+        <div className="p-8">
+          {questions.map((question, index) => (
+            <motion.div
+              key={question.id}
+              id={`question-${question.id}`}
+              className="mb-12 bg-gray-900/30 backdrop-blur-sm border border-gray-800/50 rounded-xl p-8 hover:border-gray-700/50 transition-colors"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">
                     Question {index + 1}
@@ -488,7 +582,7 @@ export default function QuizPage() {
                         <motion.label
                           key={option.id}
                           className="flex items-center space-x-3 p-4 rounded-lg border border-gray-800 cursor-pointer transition-colors"
-                          whileHover={{ scale: 1.01 }}
+                          whileHover={{ scale: 1.0 }}
                           whileTap={{ scale: 0.99 }}
                         >
                           <input

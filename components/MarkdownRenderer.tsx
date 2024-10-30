@@ -62,6 +62,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
             }
             return null; 
           },
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc list-inside pl-4" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal list-inside pl-4" {...props} />
+          ),
+          li: ({ node, ...props }) => (
+            <li className="mb-1 text-gray-300" {...props} />
+          ),
         }}
       />
     </div>
