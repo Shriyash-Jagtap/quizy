@@ -17,7 +17,7 @@ interface ConfettiPiece {
 }
 
 const Confetti: React.FC<ConfettiProps> = ({ showConfetti }) => {
-  const [scope, animate] = useAnimate();
+  const [scope] = useAnimate();
 
   const confettiPieces = useMemo(() => {
     if (!showConfetti) return [];
