@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import MarkdownRenderer from '@/components/MarkdownRenderer'; 
+import Confetti from '@/components/ui/confetti';
 
 interface Option {
   id: number;
@@ -352,35 +353,7 @@ export default function QuizPage() {
 
       {/* Main Content */}
       <div className="flex-1 pt-16 flex">
-      {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50">
-          {[...Array(50)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ 
-                y: -20,
-                x: Math.random() * window.innerWidth,
-                rotate: 0,
-                opacity: 1
-              }}
-              animate={{
-                y: window.innerHeight + 20,
-                rotate: 360,
-                opacity: 0
-              }}
-              transition={{
-                duration: 2,
-                delay: Math.random() * 0.5,
-                ease: "linear"
-              }}
-              className="absolute w-2 h-2 rounded-full"
-              style={{
-                background: `hsl(${Math.random() * 360}, 70%, 50%)`
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <Confetti showConfetti={showConfetti}/>
         {/* Sidebar */}
         <div className="w-[30vw] border-r border-gray-800/50 bg-gray-950/80 backdrop-blur-sm p-6 flex flex-col fixed h-[92vh] top-16 overflow-y-auto">
           <Link
