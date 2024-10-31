@@ -69,23 +69,23 @@ export default function SubjectPage() {
       className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
       whileHover={{ scale: 1.05 }}
     >
-      Quizy
+      quizify
     </motion.span>
   </Link>
 
   {/* Desktop Navigation */}
   <nav className="hidden md:flex items-center gap-6 ml-auto">
-    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
+    {/* <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Resources</Link>
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
     <Button variant="ghost" className="text-gray-400">Sign In</Button>
-    <Button>Get Started</Button>
+    <Button>Get Started</Button> */}
   </nav>
 
   {/* Mobile Menu Button */}
-  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+  {/* <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
     <Menu className="h-6 w-6" />
-  </Button>
+  </Button> */}
 </header>
 {/* Mobile Menu */}
 <AnimatePresence>
@@ -254,7 +254,7 @@ export default function SubjectPage() {
 
       <footer className="w-full py-8 px-4 md:px-6 border-t border-gray-800">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-400">© 2024 Quizy. All rights reserved.</p>
+          <p className="text-sm text-gray-400">© 2024 quizify. All rights reserved.</p>
           <nav className="flex gap-6">
             <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Terms</Link>
             <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Privacy</Link>

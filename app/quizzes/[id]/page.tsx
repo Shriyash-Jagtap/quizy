@@ -179,7 +179,7 @@ export default function QuizPage() {
       let userSelectedOptions: number[] = [];
       let isNumericCorrect = false;
       let correctAnswer: number | { range_min: number; range_max: number } | undefined;
-  
+
       if (question.question_type === 'multiple_choice') {
         const correctOption = question.options?.find((option) => option.is_correct);
         correctOptions = correctOption ? [correctOption] : [];
@@ -250,7 +250,6 @@ export default function QuizPage() {
     setTotalMarks(total);
     setFeedback(newFeedback); 
   };
-
   // Timer Component
   const TimerComponent = () => (
     <div className="bg-gray-900 rounded-lg p-4 mb-8">
@@ -380,7 +379,7 @@ export default function QuizPage() {
             className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
             whileHover={{ scale: 1.05 }}
           >
-            Quizy
+            quizify
           </motion.span>
         </Link>
         <Button

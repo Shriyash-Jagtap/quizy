@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, Clock, BookOpen, BarChart3, GraduationCap, FileText, Users } from 'lucide-react'
 import PerformanceChart from '@/components/PerformanceChart' // Ensure the path is correct
 
-export default function QuizyVercelLandingPage() {
+export default function quizifyVercelLandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { scrollYProgress } = useScroll()
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
@@ -28,23 +28,23 @@ export default function QuizyVercelLandingPage() {
       className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
       whileHover={{ scale: 1.05 }}
     >
-      Quizy
+      quizify
     </motion.span>
   </Link>
 
   {/* Desktop Navigation */}
-  <nav className="hidden md:flex items-center gap-6 ml-auto">
+  {/* <nav className="hidden md:flex items-center gap-6 ml-auto">
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Resources</Link>
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
     <Button variant="ghost" className="text-gray-400">Sign In</Button>
     <Button>Get Started</Button>
-  </nav>
+  </nav> */}
 
   {/* Mobile Menu Button */}
-  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+  {/* <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
     <Menu className="h-6 w-6" />
-  </Button>
+  </Button> */}
 </header>
 
 
@@ -233,7 +233,7 @@ export default function QuizyVercelLandingPage() {
                 </span>
               </h2>
               <p className="text-gray-400">
-                Join thousands of IITM BS students who are already improving their scores with Quizy.
+                Join thousands of IITM BS students who are already improving their scores with quizify.
               </p>
               <Button size="lg" className="bg-white text-black hover:bg-gray-200">
                 Get Started for Free
@@ -246,7 +246,7 @@ export default function QuizyVercelLandingPage() {
       {/* Footer */}
       <footer className="w-full py-8 px-4 md:px-6 border-t border-gray-800">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-400">© 2024 Quizy. All rights reserved.</p>
+          <p className="text-sm text-gray-400">© 2024 quizify. All rights reserved.</p>
           <nav className="flex gap-6">
             <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Terms</Link>
             <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Privacy</Link>
