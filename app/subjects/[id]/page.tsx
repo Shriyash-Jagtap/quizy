@@ -69,7 +69,7 @@ export default function SubjectPage() {
       className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
       whileHover={{ scale: 1.05 }}
     >
-      quizify
+      Quizify
     </motion.span>
   </Link>
 
@@ -254,7 +254,7 @@ export default function SubjectPage() {
 
       <footer className="w-full py-8 px-4 md:px-6 border-t border-gray-800">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-gray-400">© 2024 quizify. All rights reserved.</p>
+          <p className="text-sm text-gray-400">© 2024 Quizify. All rights reserved.</p>
           <nav className="flex gap-6">
             <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Terms</Link>
             <Link className="text-sm text-gray-400 hover:text-white transition-colors" href="#">Privacy</Link>

@@ -379,7 +379,7 @@ export default function QuizPage() {
             className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
             whileHover={{ scale: 1.05 }}
           >
-            quizify
+            Quizify
           </motion.span>
         </Link>
         <Button
