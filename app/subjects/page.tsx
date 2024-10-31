@@ -129,18 +129,18 @@ export default function QuizzesPage() {
   </Link>
 
   {/* Desktop Navigation */}
-  {/* <nav className="hidden md:flex items-center gap-6 ml-auto">
+  <nav className="hidden md:flex items-center gap-6 ml-auto">
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
-    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Resources</Link>
-    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
-    <Button variant="ghost" className="text-gray-400">Sign In</Button>
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">About</Link>
+    {/* <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
+    <Button variant="ghost" className="text-gray-400">Sign In</Button> */}
     <Button>Get Started</Button>
-  </nav> */}
+  </nav>
 
   {/* Mobile Menu Button */}
-  {/* <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
     <Menu className="h-6 w-6" />
-  </Button> */}
+  </Button>
 </header>
 {/* Mobile Menu */}
 <AnimatePresence>
