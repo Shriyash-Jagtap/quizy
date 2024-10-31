@@ -1,15 +1,20 @@
-// app/admin/edit-quiz/[id]/page.tsx
-
 'use client'; // Ensure this is a client component
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import withAuth from '@/hoc/withAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button'; // Adjust based on your project
 import { toast, ToastContainer } from 'react-toastify'; // For notifications
 import 'react-toastify/dist/ReactToastify.css';
 import Modal from 'react-modal'; // For edit modal
+import MarkdownRenderer from '@/components/MarkdownRenderer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ChevronDown, Edit2, Minus, Plus, Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import router from 'next/router';
+import withAdmin from '@/hoc/withAdmin';
 
 // Type Definitions
 
@@ -25,12 +30,14 @@ interface Quiz {
 
 interface Question {
   id: number;
+  quiz_id: number;
   question_text: string;
   question_type: string;
   marks: number;
   solution: string | null;
   parent_question_id: number | null;
   options: Option[]; // Assuming options are fetched
+  numeric_answer: NumericAnswer | null; // Added for numeric questions
 }
 
 interface Option {
@@ -40,17 +47,26 @@ interface Option {
   is_correct: boolean;
 }
 
+interface NumericAnswer {
+  id: number;
+  question_id: number;
+  exact_answer: number | null;
+  range_min: number | null;
+  range_max: number | null;
+}
+
 interface Subject {
   id: number;
   name: string;
 }
 
 const EditQuiz: React.FC = () => {
-  
+  const { user, role } = useAuth();
   const params = useParams();
   const quizId = params.id as string; // Ensure `id` is string
 
   useEffect(() => {
+    
     const appElement = document.querySelector('#__next');
     if (appElement) {
       Modal.setAppElement('#__next');
@@ -58,7 +74,14 @@ const EditQuiz: React.FC = () => {
       console.warn("App element '#__next' not found; Modal accessibility may be affected.");
     }
   }, []);
-
+  useEffect(() => {
+    if (user === null && role !== "admin") {
+      // User not authenticated, redirect to login
+      router.push('/login'); // Adjust the path as needed
+    }
+    
+    // If user is undefined, auth state is being determined
+  }, [user, router]);
   // Quiz State
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizCategory, setQuizCategory] = useState('');
@@ -75,7 +98,11 @@ const EditQuiz: React.FC = () => {
   const [newMarks, setNewMarks] = useState<number>(1);
   const [newSolution, setNewSolution] = useState('');
   const [newOptions, setNewOptions] = useState<OptionInput[]>([]);
-  const [parentQuestionId, setParentQuestionId] = useState<number | null>(null); // New state for parent question
+  const [newExactAnswer, setNewExactAnswer] = useState<number | ''>('');
+  const [newRangeMin, setNewRangeMin] = useState<number | ''>('');
+  const [newRangeMax, setNewRangeMax] = useState<number | ''>('');
+  const [parentQuestionId, setParentQuestionId] = useState<number | null>(null); // Optional parent question
+  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
 
   // Subjects State
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -96,6 +123,9 @@ const EditQuiz: React.FC = () => {
   const [editMarks, setEditMarks] = useState<number>(1);
   const [editSolution, setEditSolution] = useState<string>('');
   const [editOptions, setEditOptions] = useState<EditOptionInput[]>([]);
+  const [editExactAnswer, setEditExactAnswer] = useState<number | ''>('');
+  const [editRangeMin, setEditRangeMin] = useState<number | ''>('');
+  const [editRangeMax, setEditRangeMax] = useState<number | ''>('');
   const [editParentQuestionId, setEditParentQuestionId] = useState<number | null>(null);
 
   // Define custom types for option inputs
@@ -111,6 +141,7 @@ const EditQuiz: React.FC = () => {
   // Define QuestionType
   type QuestionType = 'multiple_choice' | 'numeric_input' | 'multiple_select' | 'numeric_range' | 'comprehension';
 
+  // Fetch Quiz Data
   const fetchQuizData = useCallback(async () => {
     if (!quizId) return;
 
@@ -130,18 +161,25 @@ const EditQuiz: React.FC = () => {
       setCode(quizData.code);
       setSubjectId(quizData.subject_id);
 
-      // Fetch Associated Questions with Options
+      // Fetch Associated Questions with Options and Numeric Answers
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
-        .select('*, options(*)')
-        .eq('quiz_id', Number(quizId));
+        .select('*, options(*), numeric_answers(*)')
+        .eq('quiz_id', Number(quizId))
+        .order('id', { ascending: true });
 
       if (questionsError) throw questionsError;
 
-      setQuestions(questionsData);
+      // Map numeric_answers to questions
+      const mappedQuestions: Question[] = questionsData.map((q: any) => ({
+        ...q,
+        numeric_answer: q.numeric_answers && q.numeric_answers.length > 0 ? q.numeric_answers[0] : null,
+      }));
+
+      setQuestions(mappedQuestions);
 
       // Filter comprehension questions for parent selection
-      const comprehensionQs = questionsData.filter(
+      const comprehensionQs = mappedQuestions.filter(
         (q) => q.question_type === 'comprehension'
       );
       setComprehensionQuestions(comprehensionQs);
@@ -255,11 +293,35 @@ const EditQuiz: React.FC = () => {
       return;
     }
 
-    // If question type is comprehension, ensure a parent question is selected
-    if (newQuestionType === 'comprehension' && parentQuestionId === null) {
-      setError('Please select a parent question for comprehension questions.');
+    if (newQuestionType === 'numeric_input' && newExactAnswer === '') {
+      setError('Please provide an exact answer for numeric input questions.');
       setSaving(false);
       return;
+    }
+
+    if (newQuestionType === 'numeric_range') {
+      if (newRangeMin === '' || newRangeMax === '') {
+        setError('Please provide both minimum and maximum values for numeric range questions.');
+        setSaving(false);
+        return;
+      }
+      if (typeof newRangeMin === 'number' && typeof newRangeMax === 'number' && newRangeMin > newRangeMax) {
+        setError('Minimum value cannot be greater than maximum value.');
+        setSaving(false);
+        return;
+      }
+    }
+
+    // Validation for comprehension questions removed to make parent optional
+    // Now, any question type (except comprehension itself) can optionally have a parent question
+    if (newQuestionType !== 'comprehension' && parentQuestionId !== null) {
+      // Ensure the selected parent is a comprehension question
+      const parentQ = comprehensionQuestions.find(q => q.id === parentQuestionId);
+      if (!parentQ) {
+        setError('Selected parent question is invalid.');
+        setSaving(false);
+        return;
+      }
     }
 
     try {
@@ -273,13 +335,33 @@ const EditQuiz: React.FC = () => {
             question_type: newQuestionType,
             marks: newMarks,
             solution: newSolution || null,
-            parent_question_id: newQuestionType === 'comprehension' ? parentQuestionId : null,
+            parent_question_id: (newQuestionType !== 'comprehension' && parentQuestionId) ? parentQuestionId : null,
           },
         ])
         .select()
         .single();
 
       if (questionError) throw questionError;
+
+      // Insert numeric_answers if applicable
+      if (newQuestionType === 'numeric_input' || newQuestionType === 'numeric_range') {
+        const numericAnswer: Partial<NumericAnswer> = {
+          question_id: questionData.id,
+        };
+
+        if (newQuestionType === 'numeric_input') {
+          numericAnswer.exact_answer = typeof newExactAnswer === 'number' ? newExactAnswer : null;
+        } else if (newQuestionType === 'numeric_range') {
+          numericAnswer.range_min = typeof newRangeMin === 'number' ? newRangeMin : null;
+          numericAnswer.range_max = typeof newRangeMax === 'number' ? newRangeMax : null;
+        }
+
+        const { error: numericError } = await supabase
+          .from('numeric_answers')
+          .insert([numericAnswer]);
+
+        if (numericError) throw numericError;
+      }
 
       // Insert options if applicable
       if (['multiple_choice', 'multiple_select'].includes(newQuestionType)) {
@@ -303,6 +385,9 @@ const EditQuiz: React.FC = () => {
       setNewMarks(1);
       setNewSolution('');
       setNewOptions([]);
+      setNewExactAnswer('');
+      setNewRangeMin('');
+      setNewRangeMax('');
       setParentQuestionId(null);
 
       toast.success('Question added successfully!');
@@ -335,6 +420,14 @@ const EditQuiz: React.FC = () => {
         .eq('question_id', questionId);
 
       if (optionsError) throw optionsError;
+
+      // Delete numeric_answers if applicable
+      const { error: numericError } = await supabase
+        .from('numeric_answers')
+        .delete()
+        .eq('question_id', questionId);
+
+      if (numericError) throw numericError;
 
       // Delete the question
       const { error: questionError } = await supabase
@@ -378,6 +471,20 @@ const EditQuiz: React.FC = () => {
     }));
     setEditOptions(options);
 
+    // Initialize numeric answers
+    if (question.numeric_answer) {
+      if (question.question_type === 'numeric_input') {
+        setEditExactAnswer(question.numeric_answer.exact_answer || '');
+      } else if (question.question_type === 'numeric_range') {
+        setEditRangeMin(question.numeric_answer.range_min || '');
+        setEditRangeMax(question.numeric_answer.range_max || '');
+      }
+    } else {
+      setEditExactAnswer('');
+      setEditRangeMin('');
+      setEditRangeMax('');
+    }
+
     setIsModalOpen(true);
   };
 
@@ -390,6 +497,9 @@ const EditQuiz: React.FC = () => {
     setEditMarks(1);
     setEditSolution('');
     setEditOptions([]);
+    setEditExactAnswer('');
+    setEditRangeMin('');
+    setEditRangeMax('');
     setEditParentQuestionId(null);
   };
 
@@ -428,11 +538,33 @@ const EditQuiz: React.FC = () => {
       return;
     }
 
-    // If question type is comprehension, ensure a parent question is selected
-    if (editQuestionType === 'comprehension' && editParentQuestionId === null) {
-      setError('Please select a parent question for comprehension questions.');
+    if (editQuestionType === 'numeric_input' && editExactAnswer === '') {
+      setError('Please provide an exact answer for numeric input questions.');
       setSaving(false);
       return;
+    }
+
+    if (editQuestionType === 'numeric_range') {
+      if (editRangeMin === '' || editRangeMax === '') {
+        setError('Please provide both minimum and maximum values for numeric range questions.');
+        setSaving(false);
+        return;
+      }
+      if (typeof editRangeMin === 'number' && typeof editRangeMax === 'number' && editRangeMin > editRangeMax) {
+        setError('Minimum value cannot be greater than maximum value.');
+        setSaving(false);
+        return;
+      }
+    }
+
+    // If a parent is assigned, ensure it's a comprehension question
+    if (editQuestionType !== 'comprehension' && editParentQuestionId !== null) {
+      const parentQ = comprehensionQuestions.find(q => q.id === editParentQuestionId);
+      if (!parentQ) {
+        setError('Selected parent question is invalid.');
+        setSaving(false);
+        return;
+      }
     }
 
     try {
@@ -444,13 +576,65 @@ const EditQuiz: React.FC = () => {
           question_type: editQuestionType,
           marks: editMarks,
           solution: editSolution || null,
-          parent_question_id: editQuestionType === 'comprehension' ? editParentQuestionId : null,
+          parent_question_id: (editQuestionType !== 'comprehension' && editParentQuestionId) ? editParentQuestionId : null,
         })
         .eq('id', editQuestion.id)
         .select()
         .single();
 
       if (updateError) throw updateError;
+
+      // Handle numeric_answers
+      if (editQuestionType === 'numeric_input' || editQuestionType === 'numeric_range') {
+        // Check if numeric_answer exists
+        const { data: existingNumeric, error: fetchNumericError } = await supabase
+          .from('numeric_answers')
+          .select('*')
+          .eq('question_id', editQuestion.id)
+          .single();
+
+        if (fetchNumericError && fetchNumericError.code !== 'PGRST116') { // PGRST116: No rows found
+          throw fetchNumericError;
+        }
+
+        const numericPayload: Partial<NumericAnswer> = {
+          exact_answer: editQuestionType === 'numeric_input' ? (typeof editExactAnswer === 'number' ? editExactAnswer : null) : null,
+          range_min: editQuestionType === 'numeric_range' ? (typeof editRangeMin === 'number' ? editRangeMin : null) : null,
+          range_max: editQuestionType === 'numeric_range' ? (typeof editRangeMax === 'number' ? editRangeMax : null) : null,
+        };
+
+        if (existingNumeric) {
+          // Update existing numeric_answer
+          const { error: updateNumericError } = await supabase
+            .from('numeric_answers')
+            .update(numericPayload)
+            .eq('id', existingNumeric.id);
+
+          if (updateNumericError) throw updateNumericError;
+        } else {
+          // Insert new numeric_answer
+          const { error: insertNumericError } = await supabase
+            .from('numeric_answers')
+            .insert([
+              {
+                question_id: editQuestion.id,
+                ...numericPayload,
+              },
+            ]);
+
+          if (insertNumericError) throw insertNumericError;
+        }
+      } else {
+        // If question type is not numeric, delete any existing numeric_answers
+        const { error: deleteNumericError } = await supabase
+          .from('numeric_answers')
+          .delete()
+          .eq('question_id', editQuestion.id);
+
+        if (deleteNumericError && deleteNumericError.code !== 'PGRST116') { // PGRST116: No rows found
+          throw deleteNumericError;
+        }
+      }
 
       // Handle options
       if (['multiple_choice', 'multiple_select'].includes(editQuestionType)) {
@@ -517,7 +701,9 @@ const EditQuiz: React.FC = () => {
           .delete()
           .eq('question_id', editQuestion.id);
 
-        if (deleteOptionsError) throw deleteOptionsError;
+        if (deleteOptionsError && deleteOptionsError.code !== 'PGRST116') { // PGRST116: No rows found
+          throw deleteOptionsError;
+        }
       }
 
       // Refresh Questions List
@@ -546,234 +732,345 @@ const EditQuiz: React.FC = () => {
   if (!quiz) return <p className="text-center text-gray-400">Quiz not found.</p>;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen bg-gray-900 text-white p-8 space-y-12">
+      {/* Header Section with Title and Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <h1 className="text-3xl font-bold">Edit Quiz</h1>
+        <div className="mt-4 md:mt-0 flex space-x-2">
+          <Button variant="outline">Preview Quiz</Button>
+          <Button onClick={handleUpdateQuiz} disabled={saving}>
+            {saving ? 'Saving...' : 'Save All Changes'}
+          </Button>
+        </div>
+      </div>
+
       {/* Toast Container for Notifications */}
       <ToastContainer />
 
-      <h1 className="text-3xl font-bold mb-6">Edit Quiz</h1>
-      <form onSubmit={handleUpdateQuiz} className="space-y-6 bg-gray-800 p-6 rounded-lg shadow-md">
-        <div>
-          <label className="block text-gray-400 mb-2">Quiz Category</label>
-          <input
-            type="text"
-            value={quizCategory}
-            onChange={(e) => setQuizCategory(e.target.value)}
-            required
-            className="w-full p-2 rounded bg-gray-700 text-white"
-            placeholder="e.g., Mathematics"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-400 mb-2">Set Name</label>
-          <input
-            type="text"
-            value={setName}
-            onChange={(e) => setSetName(e.target.value)}
-            required
-            className="w-full p-2 rounded bg-gray-700 text-white"
-            placeholder="e.g., Algebra Set 1"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-400 mb-2">Quiz Code</label>
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            required
-            className="w-full p-2 rounded bg-gray-700 text-white"
-            placeholder="e.g., MATH-ALG-001"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-400 mb-2">Subject</label>
-          <select
-            value={subjectId || ''}
-            onChange={(e) => setSubjectId(Number(e.target.value))}
-            required
-            className="w-full p-2 rounded bg-gray-700 text-white"
-          >
-            <option value="" disabled>Select a subject</option>
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button type="submit" disabled={saving} className="w-full">
-          {saving ? 'Saving...' : 'Update Quiz'}
-        </Button>
-      </form>
-
-      {/* Existing Questions Section */}
-      <section className="mt-12">
-        <h2 className="text-2xl font-bold mb-4">Questions</h2>
-        {questions.length === 0 ? (
-          <p className="text-gray-400">No questions added yet.</p>
-        ) : (
-          <div className="space-y-6">
-            {questions.map((question) => (
-              <div key={question.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-semibold">{question.question_text}</h3>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => openEditModal(question)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteQuestion(question.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-gray-400">Type: {question.question_type.replace('_', ' ')}</p>
-                <p className="text-gray-400">Marks: {question.marks}</p>
-                {question.solution && (
-                  <p className="text-gray-400">Solution: {question.solution}</p>
-                )}
-                {/* Display Parent Question if Exists */}
-                {question.parent_question_id && (
-                  <p className="text-gray-400">
-                    Parent Question: {questions.find(q => q.id === question.parent_question_id)?.question_text || 'N/A'}
-                  </p>
-                )}
-                {/* Display Options if Applicable */}
-                {['multiple_choice', 'multiple_select'].includes(question.question_type) && (
-                  <div className="mt-2">
-                    <p className="text-gray-400">Options:</p>
-                    <ul className="list-disc list-inside">
-                      {question.options.map((option) => (
-                        <li key={option.id} className="text-gray-300">
-                          {option.option_text} {option.is_correct && <span className="text-green-500">(Correct)</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Add New Question Form */}
-      <section className="mt-12">
-        <h2 className="text-2xl font-bold mb-4">Add New Question</h2>
-        <form onSubmit={handleCreateQuestion} className="space-y-6 bg-gray-800 p-6 rounded-lg shadow-md">
-          <div>
-            <label className="block text-gray-400 mb-2">Question Text</label>
-            <textarea
-              value={newQuestionText}
-              onChange={(e) => setNewQuestionText(e.target.value)}
-              required
-              className="w-full p-2 rounded bg-gray-700 text-white"
-              placeholder="Enter the question text..."
-            />
-          </div>
-          <div>
-            <label className="block text-gray-400 mb-2">Question Type</label>
-            <select
-              value={newQuestionType}
-              onChange={(e) => setNewQuestionType(e.target.value as QuestionType)}
-              required
-              className="w-full p-2 rounded bg-gray-700 text-white"
-            >
-              <option value="multiple_choice">Multiple Choice</option>
-              <option value="numeric_input">Numeric Input</option>
-              <option value="multiple_select">Multiple Select</option>
-              <option value="numeric_range">Numeric Range</option>
-              <option value="comprehension">Comprehension</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-gray-400 mb-2">Marks</label>
-            <input
-              type="number"
-              value={newMarks}
-              onChange={(e) => setNewMarks(Number(e.target.value))}
-              required
-              min={0}
-              className="w-full p-2 rounded bg-gray-700 text-white"
-              placeholder="e.g., 5"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-400 mb-2">Solution</label>
-            <textarea
-              value={newSolution}
-              onChange={(e) => setNewSolution(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 text-white"
-              placeholder="Enter the solution..."
-            />
-          </div>
-          {/* Parent Question Dropdown for Comprehension Type */}
-          {newQuestionType === 'comprehension' && (
+      {/* Quiz Details Section */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-xl">Quiz Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateQuiz} className="space-y-6">
             <div>
-              <label className="block text-gray-400 mb-2">Parent Question</label>
-              <select
-                value={parentQuestionId || ''}
-                onChange={(e) => setParentQuestionId(Number(e.target.value))}
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Quiz Category
+              </label>
+              <input
+                type="text"
+                value={quizCategory}
+                onChange={(e) => setQuizCategory(e.target.value)}
                 required
-                className="w-full p-2 rounded bg-gray-700 text-white"
+                className="w-full p-2.5 rounded-lg bg-gray-700 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="e.g., Mathematics"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Set Name
+              </label>
+              <input
+                type="text"
+                value={setName}
+                onChange={(e) => setSetName(e.target.value)}
+                required
+                className="w-full p-2.5 rounded-lg bg-gray-700 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="e.g., Algebra Set 1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Quiz Code
+              </label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+                className="w-full p-2.5 rounded-lg bg-gray-700 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="e.g., MATH-ALG-001"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Subject
+              </label>
+              <select
+                value={subjectId || ''}
+                onChange={(e) => setSubjectId(Number(e.target.value))}
+                required
+                className="w-full p-2.5 rounded-lg bg-gray-700 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               >
-                <option value="" disabled>Select a parent question</option>
-                {comprehensionQuestions.map((parentQ) => (
-                  <option key={parentQ.id} value={parentQ.id}>
-                    {parentQ.question_text}
+                <option value="" disabled>Select a subject</option>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
                   </option>
                 ))}
               </select>
             </div>
-          )}
-          {/* Options for Multiple Choice and Multiple Select */}
-          {['multiple_choice', 'multiple_select'].includes(newQuestionType) && (
-            <div>
-              <label className="block text-gray-400 mb-2">Options</label>
-              {newOptions.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-2">
+            <Button type="submit" disabled={saving} className="w-full">
+              {saving ? 'Saving...' : 'Update Quiz'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Existing Questions Section */}
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Existing Questions</h2>
+        {questions.length === 0 ? (
+          <p className="text-gray-400">No questions added yet.</p>
+        ) : (
+          <Accordion type="multiple" className="space-y-4">
+            {questions.map((question, index) => (
+              <AccordionItem
+                key={question.id}
+                value={`question-${question.id}`}
+                className="border border-gray-700 rounded-lg overflow-hidden"
+              >
+                <AccordionTrigger className="px-4 py-2 bg-gray-800 hover:bg-gray-700 transition-colors flex justify-between items-center">
+                  <div className="flex items-center">
+                    <span className="mr-4 text-gray-400">Q{index + 1}:</span>
+                    <MarkdownRenderer content={question.question_text} />
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                </AccordionTrigger>
+                <AccordionContent className="px-4 py-2 bg-gray-750">
+                  <div className="space-y-2">
+                    <p className="text-gray-400">Type: {question.question_type.replace('_', ' ')}</p>
+                    <p className="text-gray-400">Marks: {question.marks}</p>
+                    {question.solution && (
+                      <p className="text-gray-400">Solution: {question.solution}</p>
+                    )}
+                    {/* Display Parent Question if Exists */}
+                    {question.parent_question_id && (
+                      <p className="text-gray-400">
+                        Parent Question: {questions.find(q => q.id === question.parent_question_id)?.question_text || 'N/A'}
+                      </p>
+                    )}
+                    {/* Display Numeric Answers */}
+                    {['numeric_input', 'numeric_range'].includes(question.question_type) && question.numeric_answer && (
+                      <div className="mt-2">
+                        {question.question_type === 'numeric_input' && (
+                          <p className="text-gray-400">Exact Answer: {question.numeric_answer.exact_answer}</p>
+                        )}
+                        {question.question_type === 'numeric_range' && (
+                          <p className="text-gray-400">
+                            Range: {question.numeric_answer.range_min} - {question.numeric_answer.range_max}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {/* Display Options if Applicable */}
+                    {['multiple_choice', 'multiple_select'].includes(question.question_type) && (
+                      <div className="mt-2">
+                        <p className="text-gray-400">Options:</p>
+                        <ul className="list-disc list-inside">
+                          {question.options.map((option) => (
+                            <li key={option.id} className="text-gray-300 flex items-center">
+                              <MarkdownRenderer content={option.option_text} /> 
+                              {option.is_correct && <span className="text-green-500 ml-2">(Correct)</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {/* Action Buttons */}
+                    <div className="flex space-x-2 mt-4">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => openEditModal(question)}
+                      >
+                        <Edit2 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteQuestion(question.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </section>
+
+      {/* Add New Question Section */}
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Add New Question</h2>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-xl">New Question</CardTitle>
+            <Button onClick={() => setIsAddingQuestion(!isAddingQuestion)}>
+              {isAddingQuestion ? <Minus className="mr-2" /> : <Plus className="mr-2" />}
+              {isAddingQuestion ? 'Cancel' : 'Add Question'}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isAddingQuestion && (
+              <form onSubmit={handleCreateQuestion} className="space-y-6">
+                <div>
+                  <label className="block text-gray-400 mb-2">Question Text</label>
+                  <textarea
+                    value={newQuestionText}
+                    onChange={(e) => setNewQuestionText(e.target.value)}
+                    required
+                    className="w-full p-2 rounded bg-gray-700 text-white"
+                    placeholder="Enter the question text..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-400 mb-2">Question Type</label>
+                  <select
+                    value={newQuestionType}
+                    onChange={(e) => setNewQuestionType(e.target.value as QuestionType)}
+                    required
+                    className="w-full p-2 rounded bg-gray-700 text-white"
+                  >
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="numeric_input">Numeric Input</option>
+                    <option value="multiple_select">Multiple Select</option>
+                    <option value="numeric_range">Numeric Range</option>
+                    <option value="comprehension">Comprehension</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-400 mb-2">Marks</label>
                   <input
-                    type="text"
+                    type="number"
+                    value={newMarks}
+                    onChange={(e) => setNewMarks(Number(e.target.value))}
+                    required
+                    min={0}
+                    className="w-full p-2 rounded bg-gray-700 text-white"
+                    placeholder="e.g., 5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-400 mb-2">Solution</label>
+                  <textarea
+                    value={newSolution}
+                    onChange={(e) => setNewSolution(e.target.value)}
+                    className="w-full p-2 rounded bg-gray-700 text-white"
+                    placeholder="Enter the solution..."
+                  />
+                </div>
+                {/* Parent Question Dropdown for Non-Comprehension Types */}
+                {newQuestionType !== 'comprehension' && (
+                  <div>
+                    <label className="block text-gray-400 mb-2">Parent Question (Optional)</label>
+                    <select
+                      value={parentQuestionId || ''}
+                      onChange={(e) => setParentQuestionId(Number(e.target.value))}
+                      className="w-full p-2 rounded bg-gray-700 text-white"
+                    >
+                      <option value="">None</option>
+                      {comprehensionQuestions.map((parentQ) => (
+                        <option key={parentQ.id} value={parentQ.id}>
+                          {parentQ.question_text}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {/* Options for Multiple Choice and Multiple Select */}
+                {['multiple_choice', 'multiple_select'].includes(newQuestionType) && (
+                  <div>
+                    <label className="block text-gray-400 mb-2">Options</label>
+                    {newOptions.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2 mb-2">
+                        <textarea
                     value={option.option_text}
                     onChange={(e) => handleOptionChange(index, 'option_text', e.target.value)}
                     required
-                    className="flex-1 p-2 rounded bg-gray-700 text-white"
+                    className="w-full p-2 rounded bg-gray-700 text-white"
                     placeholder={`Option ${index + 1}`}
                   />
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="checkbox"
-                      checked={option.is_correct}
-                      onChange={(e) => handleOptionChange(index, 'is_correct', e.target.checked)}
-                      className="form-checkbox text-green-500 rounded border-gray-600 bg-gray-800"
-                    />
-                    <span className="text-gray-400">Correct</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveOption(index)}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
-              <Button type="button" onClick={handleAddOption}>
-                Add Option
-              </Button>
-            </div>
-          )}
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Add Question'}
-          </Button>
-        </form>
+                       
+                        <label className="flex items-center space-x-1">
+                          <input
+                            type="checkbox"
+                            checked={option.is_correct}
+                            onChange={(e) => handleOptionChange(index, 'is_correct', e.target.checked)}
+                            className="form-checkbox text-green-500 rounded border-gray-600 bg-gray-800"
+                          />
+                          <span className="text-gray-400">Correct</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOption(index)}
+                          className="text-red-500 hover:text-red-400"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                    <Button type="button" onClick={handleAddOption}>
+                      Add Option
+                    </Button>
+                  </div>
+                )}
+                {/* Fields for Numeric Input and Numeric Range */}
+                {['numeric_input', 'numeric_range'].includes(newQuestionType) && (
+                  <div>
+                    {newQuestionType === 'numeric_input' && (
+                      <div>
+                        <label className="block text-gray-400 mb-2">Exact Answer</label>
+                        <input
+                          type="number"
+                          value={newExactAnswer}
+                          onChange={(e) => setNewExactAnswer(e.target.value === '' ? '' : Number(e.target.value))}
+                          required
+                          className="w-full p-2 rounded bg-gray-700 text-white"
+                          placeholder="Enter the exact answer..."
+                        />
+                      </div>
+                    )}
+                    {newQuestionType === 'numeric_range' && (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-gray-400 mb-2">Minimum Value</label>
+                          <input
+                            type="number"
+                            value={newRangeMin}
+                            onChange={(e) => setNewRangeMin(e.target.value === '' ? '' : Number(e.target.value))}
+                            required
+                            className="w-full p-2 rounded bg-gray-700 text-white"
+                            placeholder="Enter the minimum value..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-400 mb-2">Maximum Value</label>
+                          <input
+                            type="number"
+                            value={newRangeMax}
+                            onChange={(e) => setNewRangeMax(e.target.value === '' ? '' : Number(e.target.value))}
+                            required
+                            className="w-full p-2 rounded bg-gray-700 text-white"
+                            placeholder="Enter the maximum value..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <Button type="submit" disabled={saving} className="w-full">
+                  {saving ? 'Saving...' : 'Add Question'}
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       {/* Edit Question Modal */}
@@ -833,17 +1130,16 @@ const EditQuiz: React.FC = () => {
                 placeholder="Enter the solution..."
               />
             </div>
-            {/* Parent Question Dropdown for Comprehension Type */}
-            {editQuestionType === 'comprehension' && (
+            {/* Parent Question Dropdown for Non-Comprehension Types */}
+            {editQuestionType !== 'comprehension' && (
               <div>
-                <label className="block text-gray-400 mb-2">Parent Question</label>
+                <label className="block text-gray-400 mb-2">Parent Question (Optional)</label>
                 <select
                   value={editParentQuestionId || ''}
                   onChange={(e) => setEditParentQuestionId(Number(e.target.value))}
-                  required
                   className="w-full p-2 rounded bg-gray-700 text-white"
                 >
-                  <option value="" disabled>Select a parent question</option>
+                  <option value="">None</option>
                   {comprehensionQuestions
                     .filter(q => q.id !== editQuestion.id) // Prevent selecting itself as parent
                     .map((parentQ) => (
@@ -891,6 +1187,50 @@ const EditQuiz: React.FC = () => {
                 </Button>
               </div>
             )}
+            {/* Fields for Numeric Input and Numeric Range */}
+            {['numeric_input', 'numeric_range'].includes(editQuestionType) && (
+              <div>
+                {editQuestionType === 'numeric_input' && (
+                  <div>
+                    <label className="block text-gray-400 mb-2">Exact Answer</label>
+                    <input
+                      type="number"
+                      value={editExactAnswer}
+                      onChange={(e) => setEditExactAnswer(e.target.value === '' ? '' : Number(e.target.value))}
+                      required
+                      className="w-full p-2 rounded bg-gray-700 text-white"
+                      placeholder="Enter the exact answer..."
+                    />
+                  </div>
+                )}
+                {editQuestionType === 'numeric_range' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-gray-400 mb-2">Minimum Value</label>
+                      <input
+                        type="number"
+                        value={editRangeMin}
+                        onChange={(e) => setEditRangeMin(e.target.value === '' ? '' : Number(e.target.value))}
+                        required
+                        className="w-full p-2 rounded bg-gray-700 text-white"
+                        placeholder="Enter the minimum value..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-400 mb-2">Maximum Value</label>
+                      <input
+                        type="number"
+                        value={editRangeMax}
+                        onChange={(e) => setEditRangeMax(e.target.value === '' ? '' : Number(e.target.value))}
+                        required
+                        className="w-full p-2 rounded bg-gray-700 text-white"
+                        placeholder="Enter the maximum value..."
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex justify-end space-x-4">
               <Button type="button" variant="outline" onClick={closeEditModal}>
                 Cancel
@@ -906,4 +1246,4 @@ const EditQuiz: React.FC = () => {
   );
 };
 
-export default withAuth(EditQuiz);
+export default withAdmin(EditQuiz);

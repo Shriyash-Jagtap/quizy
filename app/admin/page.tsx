@@ -3,10 +3,10 @@
 'use client'; 
 
 import React, { useEffect, useState } from 'react';
-import withAdmin from '@/hoc/withAdmin';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button'; 
+import withProtectedRoute from '@/hoc/withProtectedRoute';
 
 interface Quiz {
   id: number;
@@ -94,4 +94,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default withAdmin(AdminDashboard);
+export default withProtectedRoute(AdminDashboard, { requireAdmin: true });
