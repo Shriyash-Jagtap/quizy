@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Button } from "@/components/ui/button"
-import { Menu, Clock, BookOpen, BarChart3, GraduationCap, FileText, Users } from 'lucide-react'
+import { Menu, Clock, BookOpen, BarChart3, GraduationCap, FileText, Users, ExternalLink } from 'lucide-react'
 import PerformanceChart from '@/components/PerformanceChart' // Ensure the path is correct
 
 export default function QuizifyVercelLandingPage() {
@@ -35,7 +35,7 @@ export default function QuizifyVercelLandingPage() {
   {/* Desktop Navigation */}
   <nav className="hidden md:flex items-center gap-6 ml-auto">
     <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Features</Link>
-    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">About</Link>
+    <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="/about">About</Link>
     {/* <Link className="text-sm font-medium text-gray-400 hover:text-white transition-colors" href="#">Pricing</Link>
     <Button variant="ghost" className="text-gray-400">Sign In</Button> */}
     <Button>Get Started</Button>
@@ -235,9 +235,13 @@ export default function QuizifyVercelLandingPage() {
               <p className="text-gray-400">
                 Join thousands of IITM BS students who are already improving their scores with Quizify.
               </p>
-              <Button size="lg" className="bg-white text-black hover:bg-gray-200">
-                Get Started for Free
-              </Button>
+              <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-6 text-lg font-medium"
+                >
+                  Start Learning Now
+                  <ExternalLink className="ml-2 h-5 w-5" />
+                </Button>
             </motion.div>
           </div>
         </section>
